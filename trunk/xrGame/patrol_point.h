@@ -48,6 +48,8 @@ public:
 	IC		const u32					&flags				() const;
 	IC		const shared_str			&name				() const;
 
+	void								level_vertex_id		(u32 id);
+
 public:
 #ifdef XRGAME_EXPORTS
 			const u32					&level_vertex_id	() const;

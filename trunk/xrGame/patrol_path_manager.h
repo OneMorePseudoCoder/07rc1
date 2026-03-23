@@ -81,6 +81,7 @@ public:
 private:
 				u32					get_next_point			(u32 prev_point_index);
 				void				reset					();
+				void				validate_path_vertices	() const;
 };
 
 #include "patrol_path_manager_inline.h"

@@ -44,6 +44,12 @@ IC	const GameGraph::_GRAPH_ID &CPatrolPoint::game_vertex_id	(const CLevelGraph *
 	return				(m_game_vertex_id);
 }
 
+IC void CPatrolPoint::level_vertex_id							(u32 id)
+{
+	VERIFY(m_initialized);
+	m_level_vertex_id = id;
+}
+
 #ifdef DEBUG
 IC	void CPatrolPoint::path										(const CPatrolPath *path)
 {

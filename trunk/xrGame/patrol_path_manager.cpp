@@ -103,6 +103,14 @@ struct CAccessabilityEvaluator {
 void CPatrolPathManager::select_point(const Fvector &position, u32 &dest_vertex_id)
 {
 	VERIFY						(m_path && !m_path->vertices().empty());
+
+	// base check-in
+	if (!ai().level_graph().header().version())
+	{
+		Msg("! Level graph not loaded yet! Path: %s, object: %s", *m_path_name, *m_game_object->cName());
+		return;
+	}
+
 	const CPatrolPath::CVertex	*vertex = 0;
 	if (!actual() || !m_path->vertex(m_curr_point_index)) {
 		switch (m_start_type) {
@@ -153,6 +161,50 @@ void CPatrolPathManager::select_point(const Fvector &position, u32 &dest_vertex_
 				*m_game_object->cName()
 			)
 		);
+//#ifdef DEBUG
+		// Check exist vertex
+		if (!vertex) {
+			Msg("!PATROL: [%s] vertex is NULL, path: %s, object: %s", __FUNCTION__, *m_path_name, *m_game_object->cName());
+			return;
+		}
+
+		const CPatrolPoint& point = vertex->data();
+		u32 level_vertex_id = point.level_vertex_id();
+		Fvector pos = point.position();
+
+		Msg("PATROL: Checking vertex ID %u for point '%s' at (%.2f, %.2f, %.2f) on path '%s' (object %s)",
+			level_vertex_id, point.name().c_str(), pos.x, pos.y, pos.z, *m_path_name, *m_game_object->cName());
+
+		// Check valid ID through level graph
+		if (!ai().level_graph().valid_vertex_id(level_vertex_id))
+		{
+			// Try find correct ID
+			u32 corrected_id = ai().level_graph().vertex_id(pos);
+			Msg("!PATROL: INVALID VERTEX ID at %u (corrected to %u). Position: (%.2f, %.2f, %.2f). Path: %s, Point: %s, Object: %s",
+				level_vertex_id, corrected_id, pos.x, pos.y, pos.z, *m_path_name, point.name().c_str(), *m_game_object->cName());
+
+			if (!ai().level_graph().valid_vertex_position(pos))
+			{
+				Msg("!PATROL:  Position is outside level graph bounds.");
+			} else {
+				Msg("!PATROL:  Position is inside level graph, but vertex ID mismatch.");
+			}
+		}
+//#endif //DEBUG
+
+		// If pizda - try to fix vertices
+		u32 vid = vertex->data().level_vertex_id();
+		if (!ai().level_graph().valid_vertex_id(vid))
+		{
+			u32 new_vid = ai().level_graph().vertex_id(vertex->data().position());
+			if (ai().level_graph().valid_vertex_id(new_vid))
+			{
+				Msg("! Auto-fixed vertex ID for point %s: %u -> %u", vertex->data().name().c_str(), vid, new_vid);
+				const_cast<CPatrolPoint&>(vertex->data()).level_vertex_id(new_vid);
+				vid = new_vid;
+			}
+		}
+
 		R_ASSERT2			(
 			ai().level_graph().valid_vertex_id(vertex->data().level_vertex_id()),
 			make_string(
@@ -368,4 +420,61 @@ void CPatrolPathManager::reset()
 	
 	m_start_type			= ePatrolStartTypeDummy;
 	m_route_type			= ePatrolRouteTypeDummy;
+}
+
+#include "game_graph.h"
+void CPatrolPathManager::validate_path_vertices() const
+{
+	// Base check-in
+	if (!m_path) return;
+	if (ai().level_graph().header().version() == 0) return;
+/*
+	CPatrolPath::const_vertex_iterator it = m_path->vertices().begin();
+	CPatrolPath::const_vertex_iterator end = m_path->vertices().end();
+	for (; it != end; ++it) {
+		const CPatrolPoint& pt = it->second->data();
+		u32 vid = pt.level_vertex_id();
+		if (!ai().level_graph().valid_vertex_id(vid)) {
+			Msg("! Invalid vertex ID %u in path '%s', point '%s' at (%.2f, %.2f, %.2f).",
+				vid, *m_path_name, pt.name().c_str(), pt.position().x, pt.position().y, pt.position().z);
+		}
+	}
+*/
+    // Check level object via graph
+    u16 object_game_vertex = m_game_object->ai_location().game_vertex_id();
+    const CGameGraph::CVertex* object_game_vertex_ptr = ai().game_graph().vertex(object_game_vertex);
+    if (!object_game_vertex_ptr) return;
+    u32 object_level_id = object_game_vertex_ptr->level_id();
+
+    CPatrolPath::const_vertex_iterator it = m_path->vertices().begin();
+    CPatrolPath::const_vertex_iterator end = m_path->vertices().end();
+    for (; it != end; ++it)
+	{
+        const CPatrolPoint& pt = it->second->data();
+        u32 vid = pt.level_vertex_id();
+        
+        // Check valid level_vertex_id for curr graph
+        if (!ai().level_graph().valid_vertex_id(vid))
+		{
+            Msg("!PATROL: Invalid vertex ID %u in path '%s', point '%s' at (%.2f, %.2f, %.2f).",
+                vid, *m_path_name, pt.name().c_str(), pt.position().x, pt.position().y, pt.position().z);
+            
+            // Try to get game_vertex_id
+            u32 point_game_vertex = pt.game_vertex_id();
+            const CGameGraph::CVertex* point_game_vertex_ptr = ai().game_graph().vertex(point_game_vertex);
+            if (point_game_vertex_ptr)
+			{
+                u32 point_level_id = point_game_vertex_ptr->level_id();
+                if (point_level_id != object_level_id)
+				{
+                    Msg("!PATROL: Path '%s' point '%s' belongs to level %d, but object is on level %d",
+                        *m_path_name, pt.name().c_str(), point_level_id, object_level_id);
+                } else {
+                    Msg("!PATROL: Point '%s' on correct level, but level_vertex_id outdated", pt.name().c_str());
+                }
+            } else {
+                Msg("!PATROL: Point '%s' has invalid game_vertex_id %u", pt.name().c_str(), point_game_vertex);
+            }
+        }
+    }
 }
