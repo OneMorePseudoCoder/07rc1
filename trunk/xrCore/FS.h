@@ -188,24 +188,63 @@ public:
 
 	IC	u32 		find_chunk	(u32 ID, BOOL* bCompressed = 0)	
 	{
-		u32	dwSize,dwType;
+		u32 dwSize{}, dwType{};
+		bool success{};
 
-		rewind();
-		while (!eof()) {
+		if (m_last_pos != 0)
+		{
+			impl().seek(m_last_pos);
 			dwType = r_u32();
 			dwSize = r_u32();
-			if ((dwType&(~CFS_CompressMark)) == ID) {
-				
-				VERIFY	((u32)impl().tell() + dwSize <= (u32)impl().length());
-				if (bCompressed) *bCompressed = dwType&CFS_CompressMark;
-				return dwSize;
+			if ((dwType&(~CFS_CompressMark)) == ID) 
+			{	
+				success = true;
 			}
-			else	impl().advance(dwSize);
 		}
-		return 0;
+
+		if (!success)
+		{
+			rewind();
+			while (!eof())
+			{
+				dwType = r_u32();
+				dwSize = r_u32();
+				if ((dwType & (~CFS_CompressMark)) == ID)
+				{
+					success = true;
+					break;
+				}
+				else
+				{
+					impl().advance(dwSize);
+				}
+			}
+
+			if (!success)
+			{
+				m_last_pos = 0;
+				return 0;
+			}
+		}
+
+		VERIFY((u32)impl().tell() + dwSize <= (u32)impl().length());
+		if (bCompressed)
+			*bCompressed = dwType & CFS_CompressMark;
+
+		const int dwPos = impl().tell();
+		if (dwPos + dwSize < (u32)impl().length())
+		{
+			m_last_pos = dwPos + dwSize;
+		}
+		else
+		{
+			m_last_pos = 0;
+		}
+
+		return dwSize;
 	}
 	
-	IC	BOOL		r_chunk		(u32 ID, void *dest)	// чтение XR Chunk'ов (4b-ID,4b-size,??b-data)
+	IC	BOOL		r_chunk		(u32 ID, void *dest)	// пїЅпїЅпїЅпїЅпїЅпїЅ XR Chunk'пїЅпїЅ (4b-ID,4b-size,??b-data)
 	{
 		u32	dwSize = find_chunk(ID);
 		if (dwSize!=0) {
@@ -214,7 +253,7 @@ public:
 		} else return FALSE;
 	}
 	
-	IC	BOOL		r_chunk_safe(u32 ID, void *dest, u32 dest_size)	// чтение XR Chunk'ов (4b-ID,4b-size,??b-data)
+	IC	BOOL		r_chunk_safe(u32 ID, void *dest, u32 dest_size)	// пїЅпїЅпїЅпїЅпїЅпїЅ XR Chunk'пїЅпїЅ (4b-ID,4b-size,??b-data)
 	{
 		u32	dwSize = find_chunk(ID);
 		if (dwSize!=0) {
@@ -280,7 +319,7 @@ public:
 	void			close		();
 
 public:
-	// поиск XR Chunk'ов - возврат - размер или 0
+	// пїЅпїЅпїЅпїЅпїЅ XR Chunk'пїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅпїЅ - пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ 0
 	IReader*		open_chunk	(u32 ID);
 
 	// iterators
