@@ -51,7 +51,7 @@ public:
 	IC void			w_s16	(s16 d)					{	w(&d,sizeof(s16));	}
 	IC void			w_s8	(s8 d)					{	w(&d,sizeof(s8));	}
 	IC void			w_float	(float d)				{	w(&d,sizeof(float));}
-	IC void			w_string(const char *p)			{	w(p,(u32)xr_strlen(p));w_u8(13);w_u8(10);	}
+	IC void			w_string(const char *p)			{	w(p,(u32)xr_strlen(p));w_u8('\r');w_u8('\n');	}
 	IC void			w_stringZ(const char *p)		{	w(p,(u32)xr_strlen(p)+1);					}
 	IC void			w_stringZ(const shared_str& p) 	{	w(*p?*p:"",p.size());w_u8(0);		}
 	IC void			w_stringZ(shared_str& p)		{	w(*p?*p:"",p.size());w_u8(0);		}
@@ -184,9 +184,12 @@ public:
 		A.mul		(s);
 	}
 	// Set file pointer to start of chunk data (0 for root chunk)
-	IC	void		rewind		()			{	impl().seek(0); }
+	IC void rewind()
+	{ 
+		impl().seek(0); 
+	}
 
-	IC	u32 		find_chunk	(u32 ID, BOOL* bCompressed = 0)	
+	IC u32 find_chunk(const u32 ID, BOOL* bCompressed = nullptr)	
 	{
 		u32 dwSize{}, dwType{};
 		bool success{};
@@ -196,7 +199,7 @@ public:
 			impl().seek(m_last_pos);
 			dwType = r_u32();
 			dwSize = r_u32();
-			if (impl().elapsed() >= (sizeof(u32) * 2))
+			if (impl().elapsed() >= static_cast<int>(sizeof(u32) * 2))
 			{	
 				dwType = r_u32();
 				dwSize = r_u32();
@@ -211,7 +214,7 @@ public:
 		if (!success)
 		{
 			rewind();
-			while ((impl().elapsed() >= static_cast<long>(sizeof(u32) * 2))
+			while (impl().elapsed() >= static_cast<int>(sizeof(u32) * 2))
 			{
 				dwType = r_u32();
 				dwSize = r_u32();
@@ -222,7 +225,7 @@ public:
 				}
 				else
 				{
-					if (impl().elapsed() > dwSize)
+					if (impl().elapsed() > static_cast<int>(dwSize))
 						impl().advance(dwSize);
 					else
 						break;
@@ -244,7 +247,7 @@ public:
 		// Не знаю, от чего такое бывает, но попробуем обработать эту ситуацию.
 		//R_ASSERT((u32)impl().tell() + dwSize <= (u32)impl().length());
 
-		if (impl().elapsed() >= dwSize)
+		if (impl().elapsed() >= static_cast<int>(dwSize))
 		{
 			m_last_pos = impl().tell() + dwSize;
 			return dwSize;
@@ -257,24 +260,127 @@ public:
 		}
 	}
 	
-	IC	BOOL		r_chunk		(u32 ID, void *dest)	// ������ XR Chunk'�� (4b-ID,4b-size,??b-data)
+	u32 find_chunk_thm(const u32 ID, const char* dbg_name)
+	{
+		u32 dwSize{}, dwType{};
+		bool success{};
+
+		if (m_last_pos != 0)
+		{
+			impl().seek(m_last_pos);
+			if (impl().elapsed() >= static_cast<int>(sizeof(u32) * 2))
+			{
+				dwType = r_u32();
+				dwSize = r_u32();
+				if ((dwType & (~CFS_CompressMark)) == ID)
+				{
+					success = true;
+				}
+			}
+		}
+
+		if (!success)
+		{
+			rewind();
+			while (impl().elapsed() >= static_cast<int>(sizeof(u32) * 2))
+			{
+				dwType = r_u32();
+				dwSize = r_u32();
+				if ((dwType & (~CFS_CompressMark)) == ID)
+				{
+					success = true;
+					break;
+				}
+				else
+				{
+					if ((ID & 0x7ffffff0) == 0x810) // is it a thm chunk ID?
+					{
+						const u32 pos = (u32)impl().tell();
+						const u32 size = (u32)impl().length();
+						u32 length = dwSize;
+
+						if (pos + length != size) // not the last chunk in the file?
+						{
+							bool ok = true;
+							if (pos + length > size - 8)
+								ok = false; // size too large?
+							if (ok)
+							{
+								impl().seek(pos + length);
+								if ((r_u32() & 0x7ffffff0) != 0x810)
+									ok = false; // size too small?
+							}
+							if (!ok) // size incorrect?
+							{
+								length = 0;
+								while (pos + length < size) // find correct size, up to eof
+								{
+									impl().seek(pos + length);
+									if (pos + length <= size - 8 && (r_u32() & 0x7ffffff0) == 0x810)
+										break; // found start of next section
+									length++;
+								}
+								Msg("!![%s] THM [%s] chunk [%u] fixed, wrong size = [%u], correct size = [%u]", __FUNCTION__, dbg_name, ID, dwSize, length);
+							}
+						}
+
+						impl().seek(pos); // go back to beginning of chunk
+						dwSize = length; // use correct(ed) size
+					}
+					impl().advance(dwSize);
+				}
+			}
+
+			if (!success)
+			{
+				m_last_pos = 0;
+				return 0;
+			}
+		}
+
+		// см. комментарии выше в функции find_chunk
+		// R_ASSERT((u32)impl().tell() + dwSize <= (u32)impl().length());
+
+		if (impl().elapsed() >= static_cast<int>(dwSize))
+		{
+			m_last_pos = impl().tell() + dwSize;
+			return dwSize;
+		}
+		else
+		{
+			Msg("!![%s][%p] chunk [%u] has invalid size [%u], return elapsed size [%d]", __FUNCTION__, impl().pointer(), ID, dwSize, impl().elapsed());
+			m_last_pos = 0;
+			return impl().elapsed();
+		}
+	}
+
+	IC BOOL r_chunk(u32 ID, void *dest)	// ������ XR Chunk'�� (4b-ID,4b-size,??b-data)
 	{
 		u32	dwSize = find_chunk(ID);
-		if (dwSize!=0) {
-			r(dest,dwSize);
+		if (dwSize != 0) 
+		{
+			r(dest, dwSize);
 			return TRUE;
-		} else return FALSE;
+		}
+		else
+			return FALSE;
 	}
 	
-	IC	BOOL		r_chunk_safe(u32 ID, void *dest, u32 dest_size)	// ������ XR Chunk'�� (4b-ID,4b-size,??b-data)
+	IC BOOL r_chunk_safe(u32 ID, void *dest, u32 dest_size)	// ������ XR Chunk'�� (4b-ID,4b-size,??b-data)
 	{
 		u32	dwSize = find_chunk(ID);
-		if (dwSize!=0) {
-			R_ASSERT(dwSize==dest_size);
+		if (dwSize != 0) 
+		{
+			R_ASSERT(dwSize == dest_size);
 			r(dest,dwSize);
 			return TRUE;
-		} else return FALSE;
+		}
+		else
+			return FALSE;
 	}
+
+private:
+	size_t m_last_pos{};
 };
 
 class XRCORE_API IReader : public IReaderBase<IReader> {

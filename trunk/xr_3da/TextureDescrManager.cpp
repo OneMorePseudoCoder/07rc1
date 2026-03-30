@@ -119,10 +119,10 @@ void CTextureDescrMngr::LoadTHM()
 		strcpy_s				(fn,(*It).name.c_str());
 		fix_texture_thm_name(fn);
 
-		R_ASSERT			(F->find_chunk(THM_CHUNK_TYPE));
+		R_ASSERT			(F->find_chunk_thm(THM_CHUNK_TYPE, fn));
 		F->r_u32			();
 		tp.Clear			();
-		tp.Load				(*F);
+		tp.Load				(*F, fn);
 		FS.r_close			(F);
 #ifdef _EDITOR
 		texture_desc& desc		= m_texture_details[fn];
