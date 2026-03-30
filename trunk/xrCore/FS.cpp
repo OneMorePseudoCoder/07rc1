@@ -278,141 +278,177 @@ IReader*	IReader::open_chunk(u32 ID)
 		}
 	} else return 0;
 };
-void	IReader::close()
-{	xr_delete((IReader*)this); }
 
-IReader*	IReader::open_chunk_iterator	(u32& ID, IReader* _prev)
+void IReader::close() { xr_delete((IReader*)this); }
+
+IReader* IReader::open_chunk_iterator(u32& ID, IReader* _prev)
 {
-	if (0==_prev)	{
+	if (0 == _prev)	
+	{
 		// first
-		rewind		();
-	} else {
+		rewind();
+	}
+	else 
+	{
 		// next
-		seek		(_prev->iterpos);
+		seek(_prev->iterpos);
 		_prev->close();
 	}
 
 	//	open
-	if			(elapsed()<8)	return		NULL;
-	ID			= r_u32	()		;
-	u32 _size	= r_u32	()		;
-	if ( ID & CFS_CompressMark )
+	if (elapsed() < (sizeof(u32) * 2))
+		return nullptr;
+
+	ID = r_u32();
+	u32 _size = r_u32();
+	
+	//На всякий случай тут тоже так сделаем по аналогии с find_chunk()
+	if (elapsed() < _size)
+	{
+		Msg("!![%s] chunk [%u] has invalid size [%u], return elapsed size [%d]", __FUNCTION__, ID, _size, elapsed());
+		_size = elapsed();
+	}
+
+	if (ID & CFS_CompressMark)
 	{
 		// compressed
-		u8*				dest	;
-		unsigned		dest_sz	;
-		_decompressLZ	(&dest,&dest_sz,pointer(),_size);
-		return xr_new<CTempReader>	(dest,		dest_sz,	tell()+_size);
-	} else {
+		u8* dest;
+		unsigned dest_sz;
+		_decompressLZ(&dest, &dest_sz, pointer(), _size);
+		return xr_new<CTempReader>(dest, dest_sz, tell() + _size);
+	} 
+	else 
+	{
 		// normal
-		return xr_new<IReader>		(pointer(),	_size,		tell()+_size);
+		return xr_new<IReader>(pointer(), _size, tell() + _size);
 	}
 }
 
-void	IReader::r	(void *p,int cnt)
+void IReader::r(void *p, int cnt)
 {
-	VERIFY				(Pos+cnt<=Size);
-	CopyMemory		(p,pointer(),cnt);
-	advance				(cnt);
+	R_ASSERT(Pos + cnt <= Size);
+	CopyMemory(p, pointer(), cnt);
+	advance(cnt);
 #ifdef DEBUG
-	BOOL	bShow		= FALSE		;
-	if (dynamic_cast<CFileReader*>(this))			bShow = TRUE;
-	if (dynamic_cast<CVirtualFileReader*>(this))	bShow = TRUE;
-	if (bShow)			{
-  		FS.dwOpenCounter	++		;
+	BOOL bShow = FALSE;
+	if (dynamic_cast<CFileReader*>(this))
+		bShow = TRUE;
+	if (dynamic_cast<CVirtualFileReader*>(this))
+		bShow = TRUE;
+	if (bShow)			
+	{
+  		FS.dwOpenCounter++;
 	}
 #endif
 };
 
-IC BOOL			is_term		(char a) { return (a==13)||(a==10); };
-IC u32	IReader::advance_term_string()
+constexpr bool is_term(const char a) { return a == '\r' || a == '\n'; }
+
+IC u32 IReader::advance_term_string()
 {
-	u32 sz		= 0;
-	char *src 	= (char *) data;
-	while (!eof()) {
-        Pos++;
-        sz++;
-		if (!eof()&&is_term(src[Pos])) {
-        	while(!eof()&&is_term(src[Pos])) Pos++;
+	u32 sz = 0;
+	char *src = (char*)data;
+	while (!eof()) 
+	{
+		Pos++;
+		sz++;
+		if (!eof() && is_term(src[Pos])) 
+		{
+			while (!eof() && is_term(src[Pos]))
+				Pos++;
 			break;
 		}
 	}
     return sz;
 }
-void	IReader::r_string	(char *dest, u32 tgt_sz)
+
+void IReader::r_string(char *dest, u32 tgt_sz)
 {
-	char *src 	= (char *) data+Pos;
-	u32 sz 		= advance_term_string();
-    R_ASSERT2(sz<(tgt_sz-1),"Dest string less than needed.");
-    strncpy		(dest,src,sz);
-    dest[sz]	= 0;
+	char *src = (char *) data+Pos;
+	u32 sz = advance_term_string();
+    R_ASSERT2(sz < (tgt_sz - 1), "Dest string less than needed.");
+    strncpy(dest, src, sz);
+    dest[sz] = 0;
 }
-void	IReader::r_string	(xr_string& dest)
+
+void IReader::r_string(xr_string& dest)
 {
-	char *src 	= (char *) data+Pos;
-	u32 sz 		= advance_term_string();
-    dest.assign	(src,sz);
+	char *src = (char*)data + Pos;
+	u32 sz = advance_term_string();
+    dest.assign(src, sz);
 }
-void	IReader::r_stringZ	(char *dest, u32 tgt_sz)
+
+void IReader::r_stringZ(char *dest, u32 tgt_sz)
 {
-	char *src 	= (char *) data;
-	u32 sz 		= xr_strlen(src);
-    R_ASSERT2(sz<tgt_sz,"Dest string less than needed.");
-	while ((src[Pos]!=0) && (!eof())) *dest++ = src[Pos++];
-	*dest		=	0;
+	char *src = (char*)data;
+	u32 sz = xr_strlen(src);
+	R_ASSERT2(sz < tgt_sz, "Dest string less than needed.");
+	while ((src[Pos] != 0) && (!eof()))
+		*dest++ = src[Pos++];
+	*dest = 0;
 	Pos++;
 }
-void 	IReader::r_stringZ	(shared_str& dest)
+
+void IReader::r_stringZ(shared_str& dest)
 {
-	dest		= (char*)(data+Pos);
-    Pos			+=(dest.size()+1);
+	dest = (char*)(data+Pos);
+	advance(dest.size() + 1);
 }
-void	IReader::r_stringZ	(xr_string& dest)
+
+void IReader::r_stringZ(xr_string& dest)
 {
-    dest 		= (char*)(data+Pos);
-    Pos			+=int(dest.size()+1);
+	dest = (char*)(data + Pos);
+	advance(dest.size() + 1);
 };
 
-void	IReader::skip_stringZ	()
+void IReader::skip_stringZ()
 {
-	char *src = (char *) data;
-	while ((src[Pos]!=0) && (!eof())) Pos++;
-	Pos		++;
+	char *src = (char*)data;
+	while ((src[Pos] != 0) && (!eof()))
+		Pos++;
+	Pos++;
 };
 
 //---------------------------------------------------
 // temp stream
 CTempReader::~CTempReader()
-{	xr_free(data);	};
+{	
+	xr_free(data);	
+};
 //---------------------------------------------------
 // pack stream
 CPackReader::~CPackReader()
 {
 #ifdef DEBUG
-	unregister_file_mapping	(base_address,Size);
+	unregister_file_mapping(base_address, Size);
 #endif // DEBUG
 
-	UnmapViewOfFile	(base_address);
+	UnmapViewOfFile(base_address);
 };
 //---------------------------------------------------
 // file stream
 CFileReader::CFileReader(const char *name)
 {
-    data	= (char *)FileDownload(name,(u32 *)&Size);
-    Pos		= 0;
+    data = (char*)FileDownload(name, (u32*)&Size);
+    Pos = 0;
 };
+
 CFileReader::~CFileReader()
-{	xr_free(data);	};
+{	
+	xr_free(data);	
+};
 //---------------------------------------------------
 // compressed stream
 CCompressedReader::CCompressedReader(const char *name, const char *sign)
 {
-    data	= (char *)FileDecompress(name,sign,(u32*)&Size);
-    Pos		= 0;
+    data = (char*)FileDecompress(name, sign, (u32*)&Size);
+    Pos = 0;
 }
-CCompressedReader::~CCompressedReader()
-{	xr_free(data);	};
 
+CCompressedReader::~CCompressedReader()
+{	
+	xr_free(data);	
+};
 
 CVirtualFileRW::CVirtualFileRW(const char *cFileName) 
 {
