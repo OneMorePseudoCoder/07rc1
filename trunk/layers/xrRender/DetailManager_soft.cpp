@@ -121,35 +121,5 @@ void CDetailManager::soft_Render	()
 				RCache.Render			(D3DPT_TRIANGLELIST,vBase,0,vCount_Lock,iBase,dwNumPrimitives);
 			}
 		}
-		// Clean up
-		_vis.clear_not_free	();
 	}
 }
-
-/*
-//.
-                VERIFY(sizeof(CDetail::fvfVertexOut)==soft_Geom->vb_stride);
-                
-                CDetail::fvfVertexOut	*dstIt = vDest;
-
-                VERIFY(items->size()*Object.number_vertices==vCount_Lock);
-                
-                for	(u32 k=0; k<vCount_Lock; k++)
-                {
-					// Transfer vertices
-					{
-						u32					C = 0xffffffff;
-						CDetail::fvfVertexIn	*srcIt = Object.vertices, *srcEnd = Object.vertices+Object.number_vertices;
-						CDetail::fvfVertexOut	*dstIt = vDest;
-
-						for	(; srcIt!=srcEnd; srcIt++, dstIt++)
-						{
-							mXform.transform_tiny	(dstIt->P,srcIt->P);
-							dstIt->C	= C;
-							dstIt->u	= srcIt->u;
-							dstIt->v	= srcIt->v;
-						}
-					}
-                }
-*/                
-
