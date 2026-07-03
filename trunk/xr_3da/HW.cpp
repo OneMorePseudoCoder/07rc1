@@ -393,7 +393,7 @@ u32 CHW::selectGPU()
 	if (Caps.bForceGPU_SW)
 		return D3DCREATE_SOFTWARE_VERTEXPROCESSING;
 
-	D3DCAPS9	caps;
+	D3DCAPS9 caps;
 	pD3D->GetDeviceCaps(DevAdapter, DevT, &caps);
 
 	if (caps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT)
@@ -407,7 +407,6 @@ u32 CHW::selectGPU()
 			else
 				return D3DCREATE_HARDWARE_VERTEXPROCESSING;
 		}
-		// return D3DCREATE_MIXED_VERTEXPROCESSING;
 	}
 	else
 		return D3DCREATE_SOFTWARE_VERTEXPROCESSING;
@@ -415,19 +414,20 @@ u32 CHW::selectGPU()
 
 u32 CHW::selectRefresh(u32 dwWidth, u32 dwHeight, D3DFORMAT fmt)
 {
-	if (psDeviceFlags.is(rsRefresh60hz))
+	if (!psDeviceFlags.is(rsRefresh60hz))
 		return D3DPRESENT_RATE_DEFAULT;
 	else
 	{
-		u32 selected	= D3DPRESENT_RATE_DEFAULT;
-		u32 count		= pD3D->GetAdapterModeCount(DevAdapter,fmt);
+		u32 selected = D3DPRESENT_RATE_DEFAULT;
+		u32 target = 60;
+		u32 count = pD3D->GetAdapterModeCount(DevAdapter, fmt);
 		for (u32 I = 0; I < count; I++)
 		{
-			D3DDISPLAYMODE	Mode;
-			pD3D->EnumAdapterModes(DevAdapter,fmt,I,&Mode);
+			D3DDISPLAYMODE Mode;
+			pD3D->EnumAdapterModes(DevAdapter, fmt, I, &Mode);
 			if (Mode.Width == dwWidth && Mode.Height == dwHeight)
 			{
-				if (Mode.RefreshRate>selected)
+				if (Mode.RefreshRate>selected && Mode.RefreshRate<=target)
 					selected = Mode.RefreshRate;
 			}
 		}
@@ -435,33 +435,41 @@ u32 CHW::selectRefresh(u32 dwWidth, u32 dwHeight, D3DFORMAT fmt)
 	}
 }
 
-BOOL	CHW::support	(D3DFORMAT fmt, DWORD type, DWORD usage)
+BOOL CHW::support(D3DFORMAT fmt, DWORD type, DWORD usage)
 {
-	HRESULT hr		= pD3D->CheckDeviceFormat(DevAdapter,DevT,Caps.fTarget,usage,(D3DRESOURCETYPE)type,fmt);
-	if (FAILED(hr))	return FALSE;
-	else			return TRUE;
+	HRESULT hr = pD3D->CheckDeviceFormat(DevAdapter, DevT, Caps.fTarget, usage, (D3DRESOURCETYPE)type, fmt);
+	if (FAILED(hr))
+		return FALSE;
+	else
+		return TRUE;
 }
-
 
 static void ClampToMonitorRect(int& x, int& y, int& w, int& h, const RECT& mon)
 {
-	if (w > (mon.right - mon.left))  w = (mon.right - mon.left);
-	if (h > (mon.bottom - mon.top))  h = (mon.bottom - mon.top);
+	if (w > (mon.right - mon.left))
+		w = (mon.right - mon.left);
 
-	if (x < mon.left) x = mon.left;
-	if (y < mon.top)  y = mon.top;
+	if (h > (mon.bottom - mon.top))
+		h = (mon.bottom - mon.top);
 
-	if (x + w > mon.right)  x = mon.right - w;
-	if (y + h > mon.bottom) y = mon.bottom - h;
+	if (x < mon.left)
+		x = mon.left;
+
+	if (y < mon.top)
+		y = mon.top;
+
+	if (x + w > mon.right)
+		x = mon.right - w;
+
+	if (y + h > mon.bottom)
+		y = mon.bottom - h;
 }
 
 // --- «пришить» WS_POPUP к границам монитора с учётом DPI-виртуализации ---
-static void SnapBorderlessToMonitor(HWND hWnd, const RECT& mon,
-	int x, int y, int w, int h, UINT swpFlags)
+static void SnapBorderlessToMonitor(HWND hWnd, const RECT& mon, int x, int y, int w, int h, UINT swpFlags)
 {
 	// 1-й проход
-	SetWindowPos(hWnd, nullptr, x, y, w, h,
-		SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | swpFlags);
+	SetWindowPos(hWnd, nullptr, x, y, w, h, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | swpFlags);
 
 	// Проверяем, где окно оказалось реально
 	RECT wr; GetWindowRect(hWnd, &wr);
@@ -477,8 +485,7 @@ static void SnapBorderlessToMonitor(HWND hWnd, const RECT& mon,
 		int dw = w - rw;
 		int dh = h - rh;
 
-		SetWindowPos(hWnd, nullptr, wr.left + dx, wr.top + dy, rw + dw, rh + dh,
-			SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | swpFlags);
+		SetWindowPos(hWnd, nullptr, wr.left + dx, wr.top + dy, rw + dw, rh + dh, SWP_NOZORDER | SWP_NOOWNERZORDER | SWP_NOACTIVATE | SWP_SHOWWINDOW | swpFlags);
 	}
 }
 
@@ -495,8 +502,7 @@ void CHW::updateWindowProps(HWND hWnd)
 		// фуллскрин
 		SetWindowLong(hWnd, GWL_STYLE, WS_POPUP | WS_VISIBLE);
 		SetWindowLong(hWnd, GWL_EXSTYLE, 0);
-		SetWindowPos(hWnd, nullptr, 0, 0, 0, 0,
-			SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
+		SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED | SWP_SHOWWINDOW);
 #ifndef DEDICATED_SERVER
 		ShowCursor(FALSE); SetForegroundWindow(hWnd);
 #endif
@@ -512,20 +518,24 @@ void CHW::updateWindowProps(HWND hWnd)
 	if (UserMonitor >= 0)
 	{
 		struct { UINT want, cur; HMONITOR res; } ctx{ (UINT)UserMonitor, 0, NULL };
-		auto cb = [](HMONITOR hm, HDC, LPRECT, LPARAM lp)->BOOL {
+		auto cb = [](HMONITOR hm, HDC, LPRECT, LPARAM lp)->BOOL 
+		{
 			auto& c = *reinterpret_cast<decltype(ctx)*>(lp);
 			if (c.cur == c.want)
 			{
 				c.res = hm;
 				return FALSE;
 			}
-			++c.cur; return TRUE;
+			++c.cur;
+			return TRUE;
 		};
 		EnumDisplayMonitors(nullptr, nullptr, (MONITORENUMPROC)cb, (LPARAM)&ctx);
 		target = ctx.res;
 	}
+
 	if (!target && UserAdapter != UINT_MAX && pD3D)
 		target = pD3D->GetAdapterMonitor(UserAdapter);
+
 	if (!target)
 		target = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
 
@@ -537,8 +547,7 @@ void CHW::updateWindowProps(HWND hWnd)
 	DWORD exstyle = 0;
 	SetWindowLong(hWnd, GWL_STYLE, style);
 	SetWindowLong(hWnd, GWL_EXSTYLE, exstyle);
-	SetWindowPos(hWnd, nullptr, 0, 0, 0, 0,
-		SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
+	SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_FRAMECHANGED);
 
 	// ---------- размеры и позиция ----------
 	bool wantCenter = strstr(Core.Params, "-center_screen");
@@ -547,9 +556,7 @@ void CHW::updateWindowProps(HWND hWnd)
 	const int monH = mi.rcMonitor.bottom - mi.rcMonitor.top;
 
 	// авто: full-borderless только если backbuffer больше монитора
-	const bool makeFull =
-		(int)DevPP.BackBufferWidth > monW ||
-		(int)DevPP.BackBufferHeight > monH;
+	const bool makeFull = (int)DevPP.BackBufferWidth > monW || (int)DevPP.BackBufferHeight > monH;
 
 	int outW = (int)DevPP.BackBufferWidth;
 	int outH = (int)DevPP.BackBufferHeight;
