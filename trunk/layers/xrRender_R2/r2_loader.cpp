@@ -46,8 +46,9 @@ void CRender::level_Load(IReader* fs)
 	}
 
 	// Components
-	Wallmarks					= xr_new<CWallmarksEngine>	();
-	Details						= xr_new<CDetailManager>	();
+	L_Glows = xr_new<CGlowManager>();
+	Wallmarks = xr_new<CWallmarksEngine>();
+	Details = xr_new<CDetailManager>();
 
 	if	(!g_dedicated_server)	{
 		// VB,IB,SWI
@@ -132,7 +133,7 @@ void CRender::level_Unload()
 	Portals.clear			();
 
 	//*** Lights
-	// Glows.Unload			();
+	L_Glows->Unload			();
 	Lights.Unload			();
 
 	//*** Visuals

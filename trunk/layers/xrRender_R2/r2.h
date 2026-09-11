@@ -11,6 +11,7 @@
 #include "../xrRender/hom.h"
 #include "../xrRender/detailmanager.h"
 #include "../xrRender/modelpool.h"
+#include "../xrRender/glowmanager.h"
 #include "../xrRender/wallmarksengine.h"
 
 #include "smap_allocator.h"
@@ -99,6 +100,7 @@ public:
 
 	CDetailManager*												Details;
 	CModelPool*													Models;
+	CGlowManager*												L_Glows;
 	CWallmarksEngine*											Wallmarks;
 
 	CRenderTarget*												Target;			// Render-target

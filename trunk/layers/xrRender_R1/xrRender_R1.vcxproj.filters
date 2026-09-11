@@ -93,7 +93,7 @@
     <ClInclude Include="..\xrRender\xrStripify.h">
       <Filter>Stripifier</Filter>
     </ClInclude>
-    <ClInclude Include="GlowManager.h">
+    <ClInclude Include="..\xrRender\GlowManager.h">
       <Filter>Glows</Filter>
     </ClInclude>
     <ClInclude Include="..\xrRender\WallmarksEngine.h">
@@ -290,7 +290,7 @@
     <ClCompile Include="..\xrRender\xrStripify.cpp">
       <Filter>Stripifier</Filter>
     </ClCompile>
-    <ClCompile Include="GlowManager.cpp">
+    <ClCompile Include="..\xrRender\GlowManager.cpp">
       <Filter>Glows</Filter>
     </ClCompile>
     <ClCompile Include="..\xrRender\WallmarksEngine.cpp">

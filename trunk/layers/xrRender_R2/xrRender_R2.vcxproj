@@ -363,6 +363,7 @@
     <ClInclude Include="..\xrRender\FSkinned.h" />
     <ClInclude Include="..\xrRender\FTreeVisual.h" />
     <ClInclude Include="..\xrRender\FVisual.h" />
+    <ClInclude Include="..\xrRender\GlowManager.h" />
     <ClInclude Include="..\xrRender\ParticleEffect.h" />
     <ClInclude Include="..\xrRender\ParticleEffectDef.h" />
     <ClInclude Include="..\xrRender\ParticleGroup.h" />
@@ -466,6 +467,7 @@
     <ClCompile Include="..\xrRender\FSkinned.cpp" />
     <ClCompile Include="..\xrRender\FTreeVisual.cpp" />
     <ClCompile Include="..\xrRender\FVisual.cpp" />
+    <ClCompile Include="..\xrRender\GlowManager.cpp" />
     <ClCompile Include="..\xrRender\ParticleEffect.cpp" />
     <ClCompile Include="..\xrRender\ParticleEffectDef.cpp" />
     <ClCompile Include="..\xrRender\ParticleGroup.cpp" />

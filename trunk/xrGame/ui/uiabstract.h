@@ -4,11 +4,12 @@
 #pragma warning (disable : 4512 )
 
 #include "../ui_base.h"
-#include <boost/noncopyable.hpp>
+#include "../Common/Noncopyable.hpp"
 
 typedef CGameFont::EAligment ETextAlignment;
 
-class IUIFontControl{
+class IUIFontControl
+{
 public:	
 	virtual ~IUIFontControl()											 {};
 	virtual void			SetTextColor(u32 color)						= 0;
@@ -21,13 +22,16 @@ public:
 	virtual ETextAlignment	GetTextAlignment()							= 0;
 };
 
-typedef enum {
+typedef enum 
+{
 	valTop = 0,
 	valCenter,
 	valBotton
-} EVTextAlignment;
+} 
+EVTextAlignment;
 
-class IUITextControl : public IUIFontControl{
+class IUITextControl : public IUIFontControl
+{
 public:
 	virtual ~IUITextControl()											 {};
 	virtual void SetText(const char* text)								= 0;
@@ -36,7 +40,8 @@ public:
 
 
 // Texture controls
-class IUISimpleTextureControl{
+class IUISimpleTextureControl
+{
 public:
 	virtual ~IUISimpleTextureControl() {}
 	virtual void		CreateShader(const char* tex, const char* sh = "hud\\default")	= 0;
@@ -49,7 +54,8 @@ public:
 	virtual void		SetOriginalRectEx(const Frect& r)								= 0;
 };
 
-class IUIMultiTextureOwner{
+class IUIMultiTextureOwner
+{
 public:
 	virtual ~IUIMultiTextureOwner() {}	
 	virtual void		InitTexture(const char* texture)								= 0;
@@ -58,7 +64,8 @@ public:
 	virtual bool		GetTextureVisible()												= 0;
 };
 
-class CUIMultiTextureOwner : public IUIMultiTextureOwner{
+class CUIMultiTextureOwner : public IUIMultiTextureOwner
+{
 public:
 	CUIMultiTextureOwner(){m_bTextureAvailable = false; m_bTextureVisible = false;}
 	virtual bool		GetTextureAvailability()	{return m_bTextureAvailable;}
@@ -69,14 +76,16 @@ protected:
 	bool m_bTextureVisible;
 };
 
-class IUISingleTextureOwner : public CUIMultiTextureOwner, public IUISimpleTextureControl{
+class IUISingleTextureOwner : public CUIMultiTextureOwner, public IUISimpleTextureControl
+{
 public:	
 	virtual void		InitTextureEx(const char* texture, const char* shader)			= 0;
 	virtual void		SetStretchTexture(bool stretch)									= 0;
 	virtual bool		GetStretchTexture()												= 0;	
 };
 
-class CUISingleTextureOwner : public IUISingleTextureOwner{
+class CUISingleTextureOwner : public IUISingleTextureOwner
+{
 public:
 	virtual void		SetStretchTexture(bool stretch)	{m_bStretchTexture = stretch;}
 	virtual bool		GetStretchTexture()				{return m_bStretchTexture;}
@@ -85,7 +94,8 @@ protected:
 };
 
 // Window
-enum EWindowAlignment{
+enum EWindowAlignment
+{
 	waNone		=0,
 	waLeft		=1,
 	waRight		=2,
@@ -94,7 +104,8 @@ enum EWindowAlignment{
 	waCenter	=16
 };
 
-class IUISimpleWindow :public boost::noncopyable{
+class IUISimpleWindow :public Noncopyable
+{
 public:
 						IUISimpleWindow						()			{};		
 	virtual				~IUISimpleWindow					()			{};
@@ -109,14 +120,10 @@ public:
 	virtual void		SetWndRect(const Frect& rect)					= 0;
 	virtual void		SetHeight(float height)							= 0;
 	virtual void		SetWidth(float width)							= 0;
-/*
-private:
-						IUISimpleWindow									(const IUISimpleWindow& other);
-	IUISimpleWindow&	operator =										( const IUISimpleWindow& other );
-*/
 };
 
-class CUISimpleWindow : public IUISimpleWindow {
+class CUISimpleWindow : public IUISimpleWindow 
+{
 public:
 							CUISimpleWindow()							{m_alignment=waNone; m_wndPos.set(0,0); m_wndSize.set(0,0);}
 	virtual void			Init(float x, float y, float width, float height)	{m_wndPos.set(x,y);m_wndSize.set(width, height);}
@@ -166,7 +173,9 @@ protected:
 	Fvector2				m_wndSize;
 	EWindowAlignment		m_alignment;
 };
-class CUISelectable{
+
+class CUISelectable
+{
 protected:
 	bool m_bSelected;
 public:

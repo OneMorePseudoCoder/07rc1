@@ -590,6 +590,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\xr_3da\trivial_encryptor.h" />
+    <ClInclude Include="..\Common\Noncopyable.hpp" />
     <ClInclude Include="os_clipboard.h" />
     <ClInclude Include="buffer_vector.h" />
     <ClInclude Include="buffer_vector_inline.h" />

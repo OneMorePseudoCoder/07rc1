@@ -6,7 +6,7 @@
 
 #include "..\xrRender\hom.h"
 #include "..\xrRender\detailmanager.h"
-#include "glowmanager.h"
+#include "..\xrRender\glowmanager.h"
 #include "..\xrRender\wallmarksengine.h"
 #include "fstaticrender_rendertarget.h"
 #include "..\xrRender\modelpool.h"

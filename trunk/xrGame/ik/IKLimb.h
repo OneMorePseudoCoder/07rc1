@@ -1,9 +1,8 @@
 #pragma once
-
-
 #include "limb.h"
 #include "../layers/xrRender/SkeletonAnimated.h"
 #include "../ik_anim_state.h"
+
 class	CKinematics	;
 class	CDB::TRI	;
 struct SCalculateData;
@@ -47,7 +46,8 @@ struct calculate_state
 	{}
 };
 
-class CIKLimb {
+class CIKLimb 
+{
 public:
 							CIKLimb				();
 				void		Create				( u16 id, CKinematics* K, const u16 bones[3], const Fvector& toe_pos, bool collide_ );	
@@ -92,9 +92,10 @@ private:
 #endif
 };
 
-#include <boost/noncopyable.hpp>
+#include "../Common/Noncopyable.hpp"
 class	ik_anim_state;
-struct SCalculateData : private boost::noncopyable {
+struct SCalculateData : private Noncopyable
+{
 
 	float	const		*m_angles			;
 	CKinematicsAnimated	*m_K				;
@@ -106,10 +107,6 @@ struct SCalculateData : private boost::noncopyable {
 	Fmatrix				goal				;
 	bool				apply				;
 	bool				foot_step			;
-
-
-//	const BlendSVec		&anim_base			;
-//	const motion_vec	&uneffected_motions	;
 
 	SCalculateData(CIKLimb& l,CKinematicsAnimated	*K,const Fmatrix &o):
 	m_limb(l), m_obj(o), m_K(K), m_angles(0), apply(false), 

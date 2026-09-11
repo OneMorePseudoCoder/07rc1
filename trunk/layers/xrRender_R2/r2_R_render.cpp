@@ -112,21 +112,33 @@ void CRender::render_main	(Fmatrix&	m_ViewProjection, bool _fportals)
 					IRenderable*	renderable		= spatial->dcast_Renderable	();
 					VERIFY							(renderable);
 
-					// Occlusion
-					vis_data&		v_orig			= renderable->renderable.visual->vis;
-					vis_data		v_copy			= v_orig;
-					v_copy.box.xform				(renderable->renderable.xform);
-					BOOL			bVisible		= HOM.visible(v_copy);
-					v_orig.marker					= v_copy.marker;
-					v_orig.accept_frame				= v_copy.accept_frame;
-					v_orig.hom_frame				= v_copy.hom_frame;
-					v_orig.hom_tested				= v_copy.hom_tested;
-					if (!bVisible)					break;	// exit loop on frustums
+					// ZergO 
+					if (0 == renderable)
+					{
+						// It may be an glow
+						CGlow*		glow = dynamic_cast<CGlow*>(spatial);
+						VERIFY(glow);
+						L_Glows->add(glow);
+					}
+					else
+					{
+						// Occlusion
+						//	casting is faster then using getVis method
+						vis_data&		v_orig			= renderable->renderable.visual->vis;
+						vis_data		v_copy			= v_orig;
+						v_copy.box.xform				(renderable->renderable.xform);
+						BOOL			bVisible		= HOM.visible(v_copy);
+						v_orig.marker					= v_copy.marker;
+						v_orig.accept_frame				= v_copy.accept_frame;
+						v_orig.hom_frame				= v_copy.hom_frame;
+						v_orig.hom_tested				= v_copy.hom_tested;
+						if (!bVisible)					break;	// exit loop on frustums
 
-					// Rendering
-					set_Object						(renderable);
-					renderable->renderable_Render	();
-					set_Object						(0);
+						// Rendering
+						set_Object						(renderable);
+						renderable->renderable_Render	();
+						set_Object						(0);
+					}
 				}
 				break;	// exit loop on frustums
 			}
@@ -417,6 +429,7 @@ void CRender::render_forward				()
 		r_dsgraph_render_graph					(1)	;					// normal level, secondary priority
 		PortalTraverser.fade_render				()	;					// faded-portals
 		r_dsgraph_render_sorted					()	;					// strict-sorted geoms
+		L_Glows->Render();	// glows - ZergO
 		g_pGamePersistent->Environment().RenderLast()	;					// rain/thunder-bolts
 	}
 

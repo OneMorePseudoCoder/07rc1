@@ -234,6 +234,9 @@
     <ClInclude Include="..\xrRender\occRasterizer.h">
       <Filter>Visibility\HOM Occlusion</Filter>
     </ClInclude>
+    <ClInclude Include="..\xrRender\GlowManager.h">
+      <Filter>Glows</Filter>
+    </ClInclude>
     <ClInclude Include="du_sphere_part.h">
       <Filter>Core_Target</Filter>
     </ClInclude>
@@ -538,6 +541,9 @@
     </ClCompile>
     <ClCompile Include="r2_rendertarget_phase_smap_S.cpp">
       <Filter>Core_Target</Filter>
+    </ClCompile>
+    <ClCompile Include="..\xrRender\GlowManager.cpp">
+      <Filter>Glows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

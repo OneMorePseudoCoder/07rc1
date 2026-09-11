@@ -323,7 +323,7 @@
     <ClInclude Include="..\xrRender\NvTriStripObjects.h" />
     <ClInclude Include="..\xrRender\VertexCache.h" />
     <ClInclude Include="..\xrRender\xrStripify.h" />
-    <ClInclude Include="GlowManager.h" />
+    <ClInclude Include="..\xrRender\GlowManager.h" />
     <ClInclude Include="..\xrRender\WallmarksEngine.h" />
     <ClInclude Include="Blender_Blur.h" />
     <ClInclude Include="..\xrRender\Blender_BmmD.h" />
@@ -421,7 +421,7 @@
     <ClCompile Include="..\xrRender\NvTriStripObjects.cpp" />
     <ClCompile Include="..\xrRender\VertexCache.cpp" />
     <ClCompile Include="..\xrRender\xrStripify.cpp" />
-    <ClCompile Include="GlowManager.cpp" />
+    <ClCompile Include="..\xrRender\GlowManager.cpp" />
     <ClCompile Include="..\xrRender\WallmarksEngine.cpp" />
     <ClCompile Include="Blender_Blur.cpp" />
     <ClCompile Include="..\xrRender\Blender_BmmD.cpp" />
